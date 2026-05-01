@@ -130,33 +130,29 @@ These are deliberate starting-point constraints, not oversights. Each will be ad
 
 Each iteration introduces one or more targeted improvements, with benchmarks comparing it against the previous baseline.
 
-### Iteration 1 — Fix the Baseline
+### ✅ Iteration 1 — Fix the Baseline
 - Add a `std::mutex` + `std::condition_variable` to `CalibEngine`
 - Turn `process()` into a persistent `while(running_)` loop that blocks on `cv.wait()`
 - Guarantee correct teardown (join worker thread in destructor)
-
-### Iteration 2 — Decouple Publisher from Subscribers
-- Move callback dispatch off the publisher's thread (async broker)
-- Introduce an internal dispatch queue inside the broker with a dedicated thread
 - Measure: publisher `tick()` latency with/without slow subscribers
 
-### Iteration 3 — Ring Buffer
+### Iteration 2 — Ring Buffer
 - Replace `std::queue` with a fixed-capacity circular buffer
 - Implement overwrite-on-full vs. drop-on-full policies
 - Measure: memory footprint, cache behaviour, throughput under saturation
 
-### Iteration 4 — Lock-Free SPSC Queue
+### Iteration 3 — Lock-Free SPSC Queue
 - Implement a single-producer single-consumer (SPSC) lock-free queue using `std::atomic`
 - Appropriate for the current 1-publisher → 1-consumer topology
 - Measure: latency and throughput vs. mutex-protected queue at varying publish rates
 
-### Iteration 5 — Multiple Consumers
+### Iteration 4 — Multiple Consumers
 - Extend `Broker` to support per-subscriber independent queues (fan-out)
 - Each consumer gets its own SPSC ring buffer
 - Add a second consumer (e.g., `DepthEngine`) alongside `CalibEngine`
 - Measure: per-consumer lag under different processing speeds
 
-### Iteration 6 — MPSC / Full Concurrency
+### Iteration 5 — MPSC / Full Concurrency
 - Explore multi-producer scenarios (multiple SLAM instances)
 - Evaluate `moodycamel::ConcurrentQueue` or a custom MPSC ring buffer
 - Measure: scalability across producer/consumer thread counts
