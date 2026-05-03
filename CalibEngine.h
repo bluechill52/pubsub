@@ -1,5 +1,6 @@
 #include "Broker.h"
 #include "FrameInfo.h"
+#include "RingBuffer.h"
 #include <queue>
 #include <thread>
 #include <iostream>
@@ -8,13 +9,19 @@
 
 using namespace std;
 
+static constexpr std::size_t kQueueCapacity = 8;
+
 class CalibEngine {
 public:
     explicit CalibEngine(Broker<FrameInfo>& broker) : broker_(broker) {
         broker_.subscribe([this](const FrameInfo& info) {
             {
                 std::lock_guard<std::mutex> lock(mutex_);
-                queue_.push(info);
+
+                bool ok = queue_.push(info);
+                if (!ok) {
+                    std::cout << "[CalibEngine] buffer full — oldest frame overwritten\n";
+                }
             }
 
             cv_.notify_one();
@@ -41,10 +48,10 @@ public:
             FrameInfo frameInfo = queue_.front();
             queue_.pop();
             lock.unlock();   // Release lock before doing expensive work
-
             
             // Do something expensive - simulate with a sleep
             cout << "[CalibEngine] Popped from queue. Data: Cam ID " << frameInfo.camId_ << endl;
+            std::cout << "Popped from queue. Data: Cam ID " << frameInfo.camId_ << " | queue size: " << queue_.size() << "\n";
             this_thread::sleep_for(std::chrono::milliseconds(1000));    // 1 Hz
         }
     }
@@ -60,7 +67,7 @@ public:
 
 private:
     Broker<FrameInfo>& broker_;
-    queue<FrameInfo> queue_;
+    RingBuffer<FrameInfo, kQueueCapacity> queue_;
     std::thread worker_;
     std::mutex mutex_;
     std::condition_variable cv_;

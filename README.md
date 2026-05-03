@@ -136,7 +136,7 @@ Each iteration introduces one or more targeted improvements, with benchmarks com
 - Guarantee correct teardown (join worker thread in destructor)
 - Measure: publisher `tick()` latency with/without slow subscribers
 
-### Iteration 2 — Ring Buffer
+### ✅ Iteration 2 — Ring Buffer
 - Replace `std::queue` with a fixed-capacity circular buffer
 - Implement overwrite-on-full vs. drop-on-full policies
 - Measure: memory footprint, cache behaviour, throughput under saturation
